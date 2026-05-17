@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#1a2332">
+<title>OYADOKANRI 清掃チェック</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  :root {
+    --ink: #1a2332;
+    --ink-soft: #3d4a5c;
+    --paper: #faf8f3;
+    --paper-warm: #f0ebe0;
+    --accent: #c9302c;
+    --check: #2d7a3e;
+    --line: #d4ccb8;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    min-height: 100vh;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  .container {
+    max-width: 600px;
+    margin: 0 auto;
+    background: var(--paper);
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+
+  .header {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 24px 20px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: repeating-linear-gradient(45deg, transparent, transparent 20px, rgba(255,255,255,0.02) 20px, rgba(255,255,255,0.02) 21px);
+    pointer-events: none;
+  }
+
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 14px;
+    position: relative;
+  }
+  .header-brand {
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    opacity: 0.7;
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+  .header-title {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .edit-toggle {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: var(--paper);
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+  }
+  .edit-toggle.active { background: var(--accent); border-color: var(--accent); }
+
+  .progress-wrap {
+    background: rgba(255,255,255,0.1);
+    height: 6px;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  .progress-bar {
+    background: linear-gradient(90deg, #6cb87a, #2d7a3e);
+    height: 100%;
+    width: 0%;
+    transition: width 0.4s ease;
+  }
+  .progress-text {
+    font-size: 13px;
+    opacity: 0.85;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .edit-banner {
+    background: var(--accent);
+    color: white;
+    padding: 10px 20px;
+    font-size: 13px;
+    text-align: center;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    display: none;
+  }
+  body.edit-mode .edit-banner { display: block; }
+
+  .meta {
+    background: var(--paper-warm);
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--line);
+  }
+  .meta-row { display: flex; gap: 10px; margin-bottom: 8px; }
+  .meta-row:last-child { margin-bottom: 0; }
+  .meta-field { flex: 1; display: flex; flex-direction: column; }
+  .meta-label {
+    font-size: 11px;
+    color: var(--ink-soft);
+    letter-spacing: 0.1em;
+    margin-bottom: 3px;
+    font-weight: 600;
+  }
+  .meta-input {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 8px 10px;
+    font-size: 15px;
+    color: var(--ink);
+    font-family: inherit;
+    -webkit-appearance: none;
+  }
+  .meta-input:focus { outline: none; border-color: var(--ink); }
+
+  .section { border-bottom: 1px solid var(--line); }
+  .section-header {
+    padding: 14px 20px;
+    background: var(--paper);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    user-select: none;
+  }
+  .section-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+    cursor: pointer;
+  }
+  .section-icon {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .section-title {
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 0.05em;
+    flex: 1;
+    min-width: 0;
+  }
+  .section-meta { display: flex; align-items: center; gap: 6px; }
+  .section-count {
+    font-size: 12px;
+    color: var(--ink-soft);
+    font-weight: 500;
+    background: var(--paper-warm);
+    padding: 3px 8px;
+    border-radius: 10px;
+    min-width: 42px;
+    text-align: center;
+  }
+  .section-count.complete { background: var(--check); color: white; }
+  .section-toggle {
+    color: var(--ink-soft);
+    font-size: 14px;
+    transition: transform 0.2s;
+    margin-left: 4px;
+  }
+  .section.collapsed .section-toggle { transform: rotate(-90deg); }
+  .section.collapsed .section-body { display: none; }
+  .section-body { padding: 4px 0 8px; background: var(--paper); }
+
+  .section-edit-btns { display: none; gap: 6px; margin-left: 8px; }
+  body.edit-mode .section-edit-btns { display: flex; }
+  body.edit-mode .section-count,
+  body.edit-mode .section-toggle { display: none; }
+
+  .icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: none;
+    background: var(--paper-warm);
+    color: var(--ink);
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: inherit;
+  }
+  .icon-btn:active { background: var(--line); }
+  .icon-btn.danger { background: rgba(201,48,44,0.1); color: var(--accent); }
+
+  .check-item {
+    display: flex;
+    align-items: center;
+    padding: 11px 20px;
+    user-select: none;
+    transition: background 0.15s;
+    min-height: 44px;
+    cursor: pointer;
+  }
+  .check-item:active { background: var(--paper-warm); }
+  .check-box {
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--ink-soft);
+    border-radius: 5px;
+    margin-right: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: var(--paper);
+    transition: all 0.2s;
+    pointer-events: none;
+  }
+  .check-item.checked .check-box {
+    background: var(--check);
+    border-color: var(--check);
+  }
+  .check-box::after {
+    content: "";
+    width: 12px;
+    height: 7px;
+    border-left: 2.5px solid white;
+    border-bottom: 2.5px solid white;
+    transform: rotate(-45deg) translate(1px, -1px) scale(0);
+    transition: transform 0.15s;
+  }
+  .check-item.checked .check-box::after {
+    transform: rotate(-45deg) translate(1px, -1px) scale(1);
+  }
+  .check-label {
+    font-size: 15px;
+    color: var(--ink);
+    transition: color 0.2s;
+    flex: 1;
+    min-width: 0;
+    word-break: break-word;
+    pointer-events: none;
+  }
+  .check-item.checked .check-label {
+    color: var(--ink-soft);
+    text-decoration: line-through;
+    text-decoration-color: rgba(0,0,0,0.3);
+  }
+  .check-edit-input {
+    flex: 1;
+    background: var(--paper);
+    border: 1px solid var(--ink);
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-size: 15px;
+    color: var(--ink);
+    font-family: inherit;
+    min-width: 0;
+  }
+  body.edit-mode .check-item { cursor: default; }
+  body.edit-mode .check-item:active { background: transparent; }
+  body.edit-mode .check-label { pointer-events: auto; cursor: text; }
+  body.edit-mode .check-box { display: none; }
+  .check-delete-btn {
+    display: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: none;
+    background: rgba(201,48,44,0.1);
+    color: var(--accent);
+    font-size: 14px;
+    cursor: pointer;
+    margin-left: 8px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    font-family: inherit;
+  }
+  body.edit-mode .check-delete-btn { display: flex; }
+
+  .add-item-btn {
+    display: none;
+    margin: 8px 20px 4px;
+    padding: 10px;
+    background: transparent;
+    border: 1.5px dashed var(--line);
+    border-radius: 6px;
+    color: var(--ink-soft);
+    font-size: 14px;
+    font-weight: 600;
+    width: calc(100% - 40px);
+    cursor: pointer;
+    font-family: inherit;
+  }
+  body.edit-mode .add-item-btn { display: block; }
+  .add-item-btn:active { background: var(--paper-warm); border-color: var(--ink-soft); }
+
+  .add-section-btn {
+    display: none;
+    margin: 16px 20px 0;
+    padding: 14px;
+    background: var(--ink);
+    border: none;
+    border-radius: 8px;
+    color: var(--paper);
+    font-size: 14px;
+    font-weight: 700;
+    width: calc(100% - 40px);
+    cursor: pointer;
+    font-family: inherit;
+    letter-spacing: 0.05em;
+  }
+  body.edit-mode .add-section-btn { display: block; }
+
+  .notes-section {
+    padding: 16px 20px;
+    background: var(--paper-warm);
+    border-top: 1px solid var(--line);
+    margin-top: 16px;
+  }
+  .notes-label {
+    font-size: 12px;
+    color: var(--ink-soft);
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .notes-input {
+    width: 100%;
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 15px;
+    font-family: inherit;
+    color: var(--ink);
+    resize: vertical;
+    min-height: 80px;
+    -webkit-appearance: none;
+  }
+  .notes-input:focus { outline: none; border-color: var(--ink); }
+
+  .actions {
+    padding: 16px 20px 24px;
+    background: var(--paper);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  body.edit-mode .actions,
+  body.edit-mode .notes-section,
+  body.edit-mode .summary-box { display: none; }
+
+  .btn {
+    border: none;
+    padding: 14px 20px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: inherit;
+    border-radius: 8px;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: transform 0.1s;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--ink); color: var(--paper); }
+  .btn-line { background: #06C755; color: white; }
+  .btn-secondary {
+    background: transparent;
+    color: var(--ink-soft);
+    border: 1px solid var(--line);
+  }
+
+  .summary-box {
+    margin: 0 20px 16px;
+    padding: 14px 16px;
+    background: var(--paper-warm);
+    border-radius: 8px;
+    border-left: 4px solid var(--check);
+    font-size: 13px;
+    color: var(--ink-soft);
+    line-height: 1.6;
+  }
+  .summary-box strong {
+    color: var(--ink);
+    display: block;
+    margin-bottom: 4px;
+    font-size: 14px;
+  }
+
+  .footer {
+    padding: 12px 20px 20px;
+    text-align: center;
+    font-size: 11px;
+    color: var(--ink-soft);
+    letter-spacing: 0.1em;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--ink);
+    color: var(--paper);
+    padding: 12px 20px;
+    border-radius: 24px;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    transition: transform 0.3s ease;
+    z-index: 1000;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    padding: 20px;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--paper);
+    border-radius: 12px;
+    padding: 24px 20px 20px;
+    max-width: 340px;
+    width: 100%;
+  }
+  .modal-title { font-size: 17px; font-weight: 700; margin-bottom: 12px; }
+  .modal-text { font-size: 14px; color: var(--ink-soft); margin-bottom: 16px; }
+  .modal-input {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 15px;
+    font-family: inherit;
+    margin-bottom: 8px;
+  }
+  .modal-input:focus { outline: none; border-color: var(--ink); }
+  .modal-row { display: flex; gap: 8px; margin-bottom: 16px; }
+  .modal-row .modal-input { margin-bottom: 0; }
+  .modal-icon-input { width: 70px; text-align: center; font-size: 20px; }
+  .modal-actions { display: flex; gap: 10px; }
+  .modal-actions .btn { flex: 1; padding: 12px; font-size: 14px; }
+
+  @media (max-width: 380px) {
+    .header-title { font-size: 19px; }
+    .check-label { font-size: 14px; }
+    .edit-toggle { font-size: 12px; padding: 6px 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <div class="header-brand">OYADOKANRI</div>
+        <div class="header-title">清掃 最終チェック</div>
+      </div>
+      <button class="edit-toggle" id="editToggle" onclick="toggleEditMode()">✏️ 編集</button>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <div class="progress-text">
+      <span id="progressLabel">0 / 0 項目完了</span>
+      <span id="progressPercent">0%</span>
+    </div>
+  </div>
+
+  <div class="edit-banner">編集モード ・ 項目の追加 / 文字をタップで修正 / 削除ができます</div>
+
+  <div class="meta">
+    <div class="meta-row">
+      <div class="meta-field">
+        <label class="meta-label">日付</label>
+        <input type="date" class="meta-input" id="metaDate">
+      </div>
+      <div class="meta-field">
+        <label class="meta-label">担当者</label>
+        <input type="text" class="meta-input" id="metaStaff" placeholder="山田">
+      </div>
+    </div>
+    <div class="meta-row">
+      <div class="meta-field">
+        <label class="meta-label">物件名 / 部屋番号</label>
+        <input type="text" class="meta-input" id="metaProperty" placeholder="例：◯◯マンション 301">
+      </div>
+    </div>
+  </div>
+
+  <div id="sections"></div>
+
+  <button class="add-section-btn" onclick="openAddSectionModal()">＋ 新しいセクションを追加</button>
+
+  <div class="notes-section">
+    <div class="notes-label">備考・気になった点</div>
+    <textarea class="notes-input" id="notes" placeholder="壊れていた備品、不足品、次回への申し送り等"></textarea>
+  </div>
+
+  <div class="summary-box" id="summary" style="display:none;">
+    <strong>スクショ用サマリー</strong>
+    <span id="summaryText"></span>
+  </div>
+
+  <div class="actions">
+    <button class="btn btn-primary" onclick="prepareForScreenshot()">📸 スクショ用に整える</button>
+    <button class="btn btn-line" onclick="shareToLine()">LINEで報告を送る</button>
+    <button class="btn btn-secondary" onclick="confirmReset()">チェックをリセット</button>
+  </div>
+
+  <div class="footer">CLEANING CHECKLIST · v2.0</div>
+</div>
+
+<div class="toast" id="toast">保存しました</div>
+
+<div class="modal-overlay" id="modalAddItem">
+  <div class="modal">
+    <div class="modal-title" id="addItemTitle">項目を追加</div>
+    <input type="text" class="modal-input" id="addItemInput" placeholder="例：窓ガラス確認">
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modalAddItem')">キャンセル</button>
+      <button class="btn btn-primary" onclick="confirmAddItem()">追加</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalAddSection">
+  <div class="modal">
+    <div class="modal-title">セクションを追加</div>
+    <div class="modal-row">
+      <input type="text" class="modal-input modal-icon-input" id="addSectionIcon" placeholder="🏠" maxlength="2">
+      <input type="text" class="modal-input" id="addSectionName" placeholder="セクション名">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modalAddSection')">キャンセル</button>
+      <button class="btn btn-primary" onclick="confirmAddSection()">追加</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalEditSection">
+  <div class="modal">
+    <div class="modal-title">セクションを編集</div>
+    <div class="modal-row">
+      <input type="text" class="modal-input modal-icon-input" id="editSectionIcon" maxlength="2">
+      <input type="text" class="modal-input" id="editSectionName">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modalEditSection')">キャンセル</button>
+      <button class="btn btn-primary" onclick="confirmEditSection()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalDeleteSection">
+  <div class="modal">
+    <div class="modal-title">セクションを削除しますか？</div>
+    <div class="modal-text" id="deleteSectionText">このセクションと中の項目がすべて削除されます。</div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modalDeleteSection')">キャンセル</button>
+      <button class="btn btn-primary" onclick="confirmDeleteSection()" style="background:var(--accent);">削除</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalReset">
+  <div class="modal">
+    <div class="modal-title">チェックをリセットしますか？</div>
+    <div class="modal-text">担当者・備考もクリアされます。項目は残ります。</div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modalReset')">キャンセル</button>
+      <button class="btn btn-primary" onclick="doReset()" style="background:var(--accent);">リセット</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const DEFAULT_CHECKLIST = [
+  { id: "s1", title: "玄関", icon: "🚪", items: [
+    { id: "i1", text: "ドア・取手の汚れ確認" },
+    { id: "i2", text: "髪の毛・ホコリ除去" },
+    { id: "i3", text: "臭い確認" },
+    { id: "i4", text: "スリッパ整列" },
+    { id: "i5", text: "クモの巣確認" }
+  ]},
+  { id: "s2", title: "リビング", icon: "🛋️", items: [
+    { id: "i6", text: "床の髪の毛・ホコリ確認" },
+    { id: "i7", text: "テーブル拭き上げ" },
+    { id: "i8", text: "ソファ汚れ確認" },
+    { id: "i9", text: "テレビ周辺ホコリ確認" },
+    { id: "i10", text: "エアコン動作確認" },
+    { id: "i11", text: "照明点灯確認" },
+    { id: "i12", text: "クモの巣確認" }
+  ]},
+  { id: "s3", title: "キッチン", icon: "🍳", items: [
+    { id: "i13", text: "シンク水垢確認" },
+    { id: "i14", text: "食器汚れ確認" },
+    { id: "i15", text: "冷蔵庫内確認" },
+    { id: "i16", text: "電子レンジ内確認" },
+    { id: "i17", text: "ゴミ残置確認" },
+    { id: "i18", text: "排水溝確認" },
+    { id: "i19", text: "臭い確認" }
+  ]},
+  { id: "s4", title: "浴室", icon: "🛁", items: [
+    { id: "i20", text: "カビ確認" },
+    { id: "i21", text: "排水溝髪の毛確認" },
+    { id: "i22", text: "鏡水垢確認" },
+    { id: "i23", text: "シャンプー類補充確認" },
+    { id: "i24", text: "タオル配置確認" }
+  ]},
+  { id: "s5", title: "トイレ", icon: "🚽", items: [
+    { id: "i25", text: "便器汚れ確認" },
+    { id: "i26", text: "床汚れ確認" },
+    { id: "i27", text: "ペーパー補充" },
+    { id: "i28", text: "臭い確認" }
+  ]},
+  { id: "s6", title: "寝室", icon: "🛏️", items: [
+    { id: "i29", text: "シーツ交換確認" },
+    { id: "i30", text: "ベッド下確認" },
+    { id: "i31", text: "髪の毛確認" },
+    { id: "i32", text: "窓周辺クモの巣確認" },
+    { id: "i33", text: "臭い確認" }
+  ]},
+  { id: "s7", title: "ベランダ・外回り", icon: "🌿", items: [
+    { id: "i34", text: "ゴミ確認" },
+    { id: "i35", text: "タバコ吸い殻確認" },
+    { id: "i36", text: "クモの巣確認" },
+    { id: "i37", text: "虫確認" }
+  ]},
+  { id: "s8", title: "最終確認", icon: "✨", items: [
+    { id: "i38", text: "Wi-Fi確認" },
+    { id: "i39", text: "備品不足確認" },
+    { id: "i40", text: "室温確認" },
+    { id: "i41", text: "全体写真撮影" },
+    { id: "i42", text: "入室導線確認" },
+    { id: "i43", text: "ゲスト目線で最終巡回" }
+  ]}
+];
+
+const STORAGE_KEY = "oyadokanri_v2";
+
+let state = {
+  sections: JSON.parse(JSON.stringify(DEFAULT_CHECKLIST)),
+  checks: {},
+  meta: { date: "", staff: "", property: "" },
+  notes: "",
+  collapsed: {},
+  editMode: false
+};
+
+let editContext = { sectionId: null };
+
+function genId(prefix) {
+  return prefix + "_" + Date.now() + "_" + Math.floor(Math.random()*1000);
+}
+
+function init() {
+  loadState();
+  renderSections();
+  bindMeta();
+  setDefaultDate();
+  updateProgress();
+}
+
+function setDefaultDate() {
+  const input = document.getElementById("metaDate");
+  if (!input.value) {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, "0");
+    const dd = String(today.getDate()).padStart(2, "0");
+    input.value = `${yyyy}-${mm}-${dd}`;
+    state.meta.date = input.value;
+  }
+}
+
+function renderSections() {
+  const container = document.getElementById("sections");
+  container.innerHTML = "";
+
+  state.sections.forEach(section => {
+    const sectionEl = document.createElement("div");
+    sectionEl.className = "section" + (state.collapsed[section.id] ? " collapsed" : "");
+    sectionEl.dataset.sectionId = section.id;
+
+    const checkedCount = section.items.filter(i => state.checks[i.id]).length;
+    const isComplete = section.items.length > 0 && checkedCount === section.items.length;
+
+    sectionEl.innerHTML = `
+      <div class="section-header">
+        <div class="section-title-wrap" onclick="handleSectionTitleClick('${section.id}')">
+          <span class="section-icon">${escapeHtml(section.icon)}</span>
+          <span class="section-title">${escapeHtml(section.title)}</span>
+        </div>
+        <div class="section-meta">
+          <span class="section-count ${isComplete ? "complete" : ""}">${checkedCount}/${section.items.length}</span>
+          <span class="section-toggle">▼</span>
+          <div class="section-edit-btns">
+            <button class="icon-btn" onclick="openEditSectionModal('${section.id}')" title="編集">✏️</button>
+            <button class="icon-btn danger" onclick="openDeleteSectionModal('${section.id}')" title="削除">🗑</button>
+          </div>
+        </div>
+      </div>
+      <div class="section-body">
+        ${section.items.map(item => {
+          const isChecked = state.checks[item.id];
+          return `
+            <div class="check-item ${isChecked ? "checked" : ""}" data-item-id="${item.id}" data-section-id="${section.id}" onclick="handleItemClick(event, '${section.id}', '${item.id}')">
+              <div class="check-box"></div>
+              <div class="check-label">${escapeHtml(item.text)}</div>
+              <button class="check-delete-btn" onclick="event.stopPropagation(); deleteItem('${section.id}', '${item.id}')">🗑</button>
+            </div>
+          `;
+        }).join("")}
+        <button class="add-item-btn" onclick="openAddItemModal('${section.id}')">＋ 項目を追加</button>
+      </div>
+    `;
+    container.appendChild(sectionEl);
+  });
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
+}
+
+function handleSectionTitleClick(sectionId) {
+  if (state.editMode) return;
+  state.collapsed[sectionId] = !state.collapsed[sectionId];
+  const el = document.querySelector(`.section[data-section-id="${sectionId}"]`);
+  if (el) el.classList.toggle("collapsed");
+  saveState();
+}
+
+function handleItemClick(event, sectionId, itemId) {
+  if (!state.editMode) {
+    toggleCheck(itemId);
+    return;
+  }
+  // 編集モード：ラベル部分のクリックのみ反応
+  const labelEl = event.target.closest(".check-label");
+  if (!labelEl) return;
+  event.stopPropagation();
+  const item = state.sections.find(s => s.id === sectionId).items.find(i => i.id === itemId);
+  const currentText = item.text;
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "check-edit-input";
+  input.value = currentText;
+  labelEl.replaceWith(input);
+  input.focus();
+  input.select();
+
+  let finished = false;
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    const newText = input.value.trim();
+    if (newText) {
+      item.text = newText;
+      saveState();
+    }
+    renderSections();
+  };
+  input.addEventListener("blur", finish);
+  input.addEventListener("keydown", e => {
+    if (e.key === "Enter") input.blur();
+    if (e.key === "Escape") { input.value = currentText; input.blur(); }
+  });
+}
+
+function toggleCheck(itemId) {
+  if (state.editMode) return;
+  state.checks[itemId] = !state.checks[itemId];
+  saveState();
+
+  const item = document.querySelector(`.check-item[data-item-id="${itemId}"]`);
+  if (item) item.classList.toggle("checked");
+
+  const section = state.sections.find(s => s.items.some(i => i.id === itemId));
+  if (section) {
+    const checked = section.items.filter(i => state.checks[i.id]).length;
+    const sectionEl = document.querySelector(`.section[data-section-id="${section.id}"]`);
+    const countEl = sectionEl.querySelector(".section-count");
+    countEl.textContent = `${checked}/${section.items.length}`;
+    countEl.classList.toggle("complete", checked === section.items.length && section.items.length > 0);
+  }
+
+  updateProgress();
+  if (navigator.vibrate) navigator.vibrate(10);
+}
+
+function updateProgress() {
+  const total = state.sections.reduce((s, sec) => s + sec.items.length, 0);
+  const checked = state.sections.reduce((sum, sec) =>
+    sum + sec.items.filter(i => state.checks[i.id]).length, 0);
+  const pct = total ? Math.round((checked / total) * 100) : 0;
+
+  document.getElementById("progressBar").style.width = pct + "%";
+  document.getElementById("progressLabel").textContent = `${checked} / ${total} 項目完了`;
+  document.getElementById("progressPercent").textContent = pct + "%";
+}
+
+function bindMeta() {
+  ["metaDate", "metaStaff", "metaProperty"].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener("input", () => {
+      const key = id.replace("meta", "").toLowerCase();
+      state.meta[key] = el.value;
+      saveState();
+    });
+    const key = id.replace("meta", "").toLowerCase();
+    if (state.meta[key]) el.value = state.meta[key];
+  });
+
+  const notesEl = document.getElementById("notes");
+  notesEl.value = state.notes || "";
+  notesEl.addEventListener("input", () => {
+    state.notes = notesEl.value;
+    saveState();
+  });
+}
+
+function saveState() {
+  try {
+    if (typeof localStorage !== "undefined") {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+  } catch (e) {}
+}
+
+function loadState() {
+  try {
+    if (typeof localStorage !== "undefined") {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        state = { ...state, ...parsed };
+        if (!state.sections || state.sections.length === 0) {
+          state.sections = JSON.parse(JSON.stringify(DEFAULT_CHECKLIST));
+        }
+      }
+    }
+  } catch (e) {}
+}
+
+function showToast(msg) {
+  const toast = document.getElementById("toast");
+  toast.textContent = msg;
+  toast.classList.add("show");
+  setTimeout(() => toast.classList.remove("show"), 2000);
+}
+
+function toggleEditMode() {
+  state.editMode = !state.editMode;
+  document.body.classList.toggle("edit-mode", state.editMode);
+  const btn = document.getElementById("editToggle");
+  btn.textContent = state.editMode ? "✓ 完了" : "✏️ 編集";
+  btn.classList.toggle("active", state.editMode);
+
+  if (state.editMode) {
+    state.collapsed = {};
+    document.querySelectorAll(".section").forEach(s => s.classList.remove("collapsed"));
+  }
+  saveState();
+}
+
+function openAddItemModal(sectionId) {
+  editContext.sectionId = sectionId;
+  const section = state.sections.find(s => s.id === sectionId);
+  document.getElementById("addItemTitle").textContent = `「${section.title}」に項目追加`;
+  document.getElementById("addItemInput").value = "";
+  document.getElementById("modalAddItem").classList.add("show");
+  setTimeout(() => document.getElementById("addItemInput").focus(), 100);
+}
+
+function confirmAddItem() {
+  const text = document.getElementById("addItemInput").value.trim();
+  if (!text) return;
+  const section = state.sections.find(s => s.id === editContext.sectionId);
+  section.items.push({ id: genId("i"), text });
+  saveState();
+  closeModal("modalAddItem");
+  renderSections();
+  updateProgress();
+  showToast("項目を追加しました");
+}
+
+function deleteItem(sectionId, itemId) {
+  const section = state.sections.find(s => s.id === sectionId);
+  section.items = section.items.filter(i => i.id !== itemId);
+  delete state.checks[itemId];
+  saveState();
+  renderSections();
+  updateProgress();
+  showToast("項目を削除しました");
+}
+
+function openAddSectionModal() {
+  document.getElementById("addSectionIcon").value = "";
+  document.getElementById("addSectionName").value = "";
+  document.getElementById("modalAddSection").classList.add("show");
+  setTimeout(() => document.getElementById("addSectionName").focus(), 100);
+}
+
+function confirmAddSection() {
+  const name = document.getElementById("addSectionName").value.trim();
+  const icon = document.getElementById("addSectionIcon").value.trim() || "📋";
+  if (!name) return;
+  state.sections.push({ id: genId("s"), title: name, icon, items: [] });
+  saveState();
+  closeModal("modalAddSection");
+  renderSections();
+  showToast("セクションを追加しました");
+}
+
+function openEditSectionModal(sectionId) {
+  editContext.sectionId = sectionId;
+  const section = state.sections.find(s => s.id === sectionId);
+  document.getElementById("editSectionIcon").value = section.icon;
+  document.getElementById("editSectionName").value = section.title;
+  document.getElementById("modalEditSection").classList.add("show");
+}
+
+function confirmEditSection() {
+  const name = document.getElementById("editSectionName").value.trim();
+  const icon = document.getElementById("editSectionIcon").value.trim() || "📋";
+  if (!name) return;
+  const section = state.sections.find(s => s.id === editContext.sectionId);
+  section.title = name;
+  section.icon = icon;
+  saveState();
+  closeModal("modalEditSection");
+  renderSections();
+  showToast("セクションを更新しました");
+}
+
+function openDeleteSectionModal(sectionId) {
+  editContext.sectionId = sectionId;
+  const section = state.sections.find(s => s.id === sectionId);
+  document.getElementById("deleteSectionText").textContent =
+    `「${section.title}」と中の${section.items.length}項目が削除されます。`;
+  document.getElementById("modalDeleteSection").classList.add("show");
+}
+
+function confirmDeleteSection() {
+  const sectionId = editContext.sectionId;
+  const section = state.sections.find(s => s.id === sectionId);
+  section.items.forEach(i => delete state.checks[i.id]);
+  state.sections = state.sections.filter(s => s.id !== sectionId);
+  saveState();
+  closeModal("modalDeleteSection");
+  renderSections();
+  updateProgress();
+  showToast("セクションを削除しました");
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove("show");
+}
+
+function prepareForScreenshot() {
+  state.collapsed = {};
+  document.querySelectorAll(".section").forEach(s => s.classList.remove("collapsed"));
+
+  const total = state.sections.reduce((s, sec) => s + sec.items.length, 0);
+  const checked = state.sections.reduce((sum, sec) =>
+    sum + sec.items.filter(i => state.checks[i.id]).length, 0);
+  const date = state.meta.date || "未入力";
+  const staff = state.meta.staff || "未入力";
+  const prop = state.meta.property || "未入力";
+
+  document.getElementById("summary").style.display = "block";
+  document.getElementById("summaryText").innerHTML =
+    `${date} ／ ${prop}<br>担当：${staff}<br>完了：${checked} / ${total} 項目（${total ? Math.round(checked/total*100) : 0}%）`;
+
+  saveState();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  setTimeout(() => showToast("📸 スクショの準備ができました"), 400);
+}
+
+function shareToLine() {
+  const total = state.sections.reduce((s, sec) => s + sec.items.length, 0);
+  const checked = state.sections.reduce((sum, sec) =>
+    sum + sec.items.filter(i => state.checks[i.id]).length, 0);
+
+  let text = `【OYADOKANRI 清掃完了報告】\n`;
+  text += `日付：${state.meta.date || "—"}\n`;
+  text += `物件：${state.meta.property || "—"}\n`;
+  text += `担当：${state.meta.staff || "—"}\n`;
+  text += `進捗：${checked}/${total}（${total ? Math.round(checked/total*100) : 0}%）\n\n`;
+
+  state.sections.forEach(section => {
+    const sectionChecked = section.items.filter(i => state.checks[i.id]).length;
+    const mark = sectionChecked === section.items.length && section.items.length > 0 ? "✅"
+               : sectionChecked > 0 ? "🔸" : "⬜";
+    text += `${mark} ${section.title}（${sectionChecked}/${section.items.length}）\n`;
+
+    const unchecked = section.items.filter(i => !state.checks[i.id]);
+    if (unchecked.length > 0 && unchecked.length < section.items.length) {
+      unchecked.forEach(item => text += `   └ 未：${item.text}\n`);
+    }
+  });
+
+  if (state.notes && state.notes.trim()) {
+    text += `\n■ 備考\n${state.notes}\n`;
+  }
+
+  const url = "https://line.me/R/share?text=" + encodeURIComponent(text);
+  if (navigator.clipboard) navigator.clipboard.writeText(text).catch(() => {});
+  window.location.href = url;
+  setTimeout(() => showToast("テキストもコピーしました"), 500);
+}
+
+function confirmReset() {
+  document.getElementById("modalReset").classList.add("show");
+}
+
+function doReset() {
+  state.checks = {};
+  state.meta = { date: "", staff: "", property: "" };
+  state.notes = "";
+  state.collapsed = {};
+  saveState();
+  document.getElementById("metaStaff").value = "";
+  document.getElementById("metaProperty").value = "";
+  document.getElementById("notes").value = "";
+  document.getElementById("summary").style.display = "none";
+  setDefaultDate();
+  renderSections();
+  updateProgress();
+  closeModal("modalReset");
+  showToast("リセットしました");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+init();
+</script>
+</body>
+</html>
